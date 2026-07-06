@@ -25,7 +25,7 @@ const bird = {
     height: 60,
     velocity: 0,
     gravity: 0.5,
-    jump: -9
+    jump: -6
 };
 
 // Pipes
