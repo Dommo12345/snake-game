@@ -21,14 +21,14 @@ const cobraSound = new Audio("assets/cobra.mp3");
 const bird = {
     x: 80,
     y: 250,
-    width: 60,
-    height: 60,
+    width: 70,
+    height: 70,
     velocity: 0,
-    gravity: 0.5,
-    jump: -9
+    gravity: 0.45,
+    jump: -7
 };
 
-// Pipes
+// Game Variables
 let pipes = [];
 let score = 0;
 let gameOver = false;
@@ -44,10 +44,8 @@ function flap() {
     cobraSound.play();
 }
 
-document.addEventListener("keydown", function(e) {
-    if (e.code === "Space") {
-        flap();
-    }
+document.addEventListener("keydown", (e) => {
+    if (e.code === "Space") flap();
 });
 
 canvas.addEventListener("click", flap);
@@ -57,22 +55,22 @@ function createPipe() {
 
     if (gameOver) return;
 
-    const gap = 170;
-    const topHeight = Math.floor(Math.random() * 220) + 60;
+    const gap = 140;
+    const topHeight = Math.floor(Math.random() * 180) + 80;
 
     pipes.push({
         x: canvas.width,
-        width: 80,
+        width: 100,
         top: topHeight,
         bottom: topHeight + gap,
         scored: false
     });
-
 }
 
-setInterval(createPipe, 1800);
+setInterval(createPipe, 1700);
 
-// Update
+// ================= UPDATE GAME =================
+
 function update() {
 
     if (gameOver) {
@@ -89,96 +87,117 @@ function update() {
         gameOver = true;
     }
 
-    ctx.clearRect(0,0,canvas.width,canvas.height);
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
 
     // Background
-    ctx.drawImage(bg,0,0,canvas.width,canvas.height);
+    ctx.drawImage(bg, 0, 0, canvas.width, canvas.height);
 
     // Pipes
-    for(let i=0;i<pipes.length;i++){
+    for (let i = 0; i < pipes.length; i++) {
 
         let p = pipes[i];
-        p.x -= 3;
+
+        p.x -= 4;
 
         // Top Pipe
         ctx.save();
-        ctx.translate(p.x + p.width/2, p.top/2);
+        ctx.translate(p.x + p.width / 2, p.top / 2);
         ctx.rotate(Math.PI);
-        ctx.drawImage(pipe,-p.width/2,-p.top/2,p.width,p.top);
+        ctx.drawImage(pipe, -p.width / 2, -p.top / 2, p.width, p.top);
         ctx.restore();
 
         // Bottom Pipe
-        ctx.drawImage(pipe,p.x,p.bottom,p.width,canvas.height-p.bottom);
+        ctx.drawImage(pipe, p.x, p.bottom, p.width, canvas.height - p.bottom);
 
-        // Collision
-        if(
-            bird.x + bird.width > p.x &&
-            bird.x < p.x + p.width &&
-            (bird.y < p.top || bird.y + bird.height > p.bottom)
-        ){
+        // ===== PERFECT COLLISION =====
+        const hit = 18;
+
+        const birdLeft = bird.x + hit;
+        const birdRight = bird.x + bird.width - hit;
+        const birdTop = bird.y + hit;
+        const birdBottom = bird.y + bird.height - hit;
+
+        const pipeLeft = p.x;
+        const pipeRight = p.x + p.width;
+
+        if (
+            birdRight > pipeLeft &&
+            birdLeft < pipeRight &&
+            (birdTop < p.top || birdBottom > p.bottom)
+        ) {
             gameOver = true;
         }
 
         // Score
-        if(!p.scored && p.x + p.width < bird.x){
+        if (!p.scored && p.x + p.width < bird.x) {
             p.scored = true;
             score++;
 
-            if(score > highScore){
+            if (score > highScore) {
                 highScore = score;
-                localStorage.setItem("highScore",highScore);
+                localStorage.setItem("highScore", highScore);
             }
         }
     }
 
-    pipes = pipes.filter(p=>p.x+p.width>0);
+    // Remove old pipes
+    pipes = pipes.filter(p => p.x + p.width > 0);
 
-    // Bird
-    ctx.drawImage(head,bird.x,bird.y,bird.width,bird.height);
+    // Draw Bird
+    ctx.drawImage(head, bird.x, bird.y, bird.width, bird.height);
 
     // Score
-    ctx.fillStyle="white";
-    ctx.font="30px Arial";
-    ctx.fillText("Score : "+score,20,40);
+    ctx.fillStyle = "white";
+    ctx.font = "30px Arial";
+    ctx.fillText("Score : " + score, 20, 40);
 
-    ctx.fillStyle="yellow";
-    ctx.font="22px Arial";
-    ctx.fillText("High : "+highScore,20,70);
+    ctx.fillStyle = "yellow";
+    ctx.font = "22px Arial";
+    ctx.fillText("High : " + highScore, 20, 70);
 
     requestAnimationFrame(update);
 }
 
-// Game Over
-function drawGameOver(){
+// ================= GAME OVER SCREEN =================
 
-    ctx.fillStyle="rgba(0,0,0,0.6)";
-    ctx.fillRect(0,0,canvas.width,canvas.height);
+function drawGameOver() {
 
-    ctx.fillStyle="white";
-    ctx.font="40px Arial";
-    ctx.fillText("GAME OVER",70,220);
+    ctx.fillStyle = "rgba(0,0,0,0.6)";
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-    ctx.font="28px Arial";
-    ctx.fillText("Score : "+score,120,270);
+    ctx.fillStyle = "white";
+    ctx.font = "42px Arial";
+    ctx.fillText("GAME OVER", 70, 220);
 
-    ctx.fillStyle="red";
-    ctx.fillRect(110,320,180,60);
+    ctx.font = "28px Arial";
+    ctx.fillText("Score : " + score, 125, 270);
 
-    ctx.fillStyle="white";
-    ctx.font="24px Arial";
-    ctx.fillText("Click Restart",120,360);
+    ctx.fillText("High : " + highScore, 125, 310);
+
+    ctx.fillStyle = "#ff3333";
+    ctx.fillRect(110, 360, 180, 60);
+
+    ctx.fillStyle = "white";
+    ctx.font = "26px Arial";
+    ctx.fillText("RESTART", 135, 398);
 }
 
-// Restart
-canvas.addEventListener("click",function(){
+// ================= RESTART =================
 
-    if(gameOver){
+canvas.addEventListener("click", function () {
+
+    if (gameOver) {
         location.reload();
     }
 
 });
 
-// Start Game
-bg.onload = function(){
+// ================= START GAME =================
+
+Promise.all([
+    new Promise(resolve => bg.onload = resolve),
+    new Promise(resolve => head.onload = resolve),
+    new Promise(resolve => pipe.onload = resolve)
+]).then(() => {
     update();
-};
+});
